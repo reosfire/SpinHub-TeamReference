@@ -1,5 +1,69 @@
 ## Структуры данных
-### DSU (Disjoint Set Union / Система непересекающихся множеств)
+### DSU
+Будем хранить систему как лес. Одно множество - дерево. У каждого множества есть representative - корень этого дерева. Для хранения леся используем массив parent. parentOfA = parent[A]. Все элементы которые хранятся в этой системе множеств занумерованы [0, n). Если елемент - корень дерева то в массиве parent храним особое значение (обычно делают parent[A] = A).
+
+**Основные операции:**
+
+1. **findRepresentative(x)** x - какой то произвольный элемент системы, representative которого мы хотим найти. Ищем рекурсивно representative у парента x пока не наткнемся на корень. Для поддержания асимптотики делаем компрессию путей (все вершины которые мы встретим на пути к representative, на анроллинге рекурсии будем подвешивать напрямую к representative)
+
+2. **unite(x, y)** — объединение двух множеств элементами которых являются x и y. Находим representative обоих и хотим подвесить одного к другому. Для поддержания асимптотики будем хранить rank деревьев(можно глубину, либо количество нод) и будем подвешивать меньшее дерево к бОльшему. При подвеске обновляем новые размеры деревьев
+
+3. **connected(x, y)** => **findRepresentative(x)** == **findRepresentative(y)** — проверка принадлежности одному множеству 
+
+**Расширенные возможности:**
+
+1. Можно хранить доп инфу о множествах по аналогии с тем как мы храним rank для оптимизации **unite()**
+
+2. Rollback
+
+**DSU с откатом (Rollback DSU):**
+```cpp
+class RollbackDSU {
+    vector<int> parent, rank;
+    stack<pair<int, int>> history;  // (index, old_parent)
+    
+public:
+    RollbackDSU(int n) : parent(n), rank(n, 0) {
+        iota(parent.begin(), parent.end(), 0);
+    }
+    
+    int find(int x) {
+        while (parent[x] != x) x = parent[x];
+        return x;
+    }
+    
+    bool unite(int x, int y) {
+        x = find(x); y = find(y);
+        if (x == y) return false;
+        if (rank[x] < rank[y]) swap(x, y);
+        history.push({y, parent[y]});
+        history.push({x, rank[x]});
+        parent[y] = x;
+        if (rank[x] == rank[y]) rank[x]++;
+        return true;
+    }
+    
+    void rollback() {
+        if (history.empty()) return;
+        int x = history.top().first;
+        rank[x] = history.top().second;
+        history.pop();
+        int y = history.top().first;
+        parent[y] = history.top().second;
+        history.pop();
+    }
+};
+```
+
+**Применения:**
+- Алгоритм Краскала (минимальное остовное дерево)
+- Проверка связности графа
+- Поиск компонент связности
+- Offline запросы на добавление рёбер
+- LCA (Lowest Common Ancestor) через offline запросы
+- Динамическая связность (с откатами)
+- Painting subarrays
+
 ### Дерево отрезков (Segment Tree)
 ### Дерево Фенвика (Fenwick Tree / Binary Indexed Tree)
 ### Корневая декомпозиция (Square Root Decomposition)
